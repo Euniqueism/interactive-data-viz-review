@@ -1,633 +1,516 @@
 <!DOCTYPE html>
-<html lang="en" class="scroll-smooth">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Interactive Data Visualization — Semester Review Portal</title>
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Google Fonts: Space Grotesk, Inter & JetBrains Mono -->
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet" />
-  <!-- Tailwind Configuration -->
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['Inter', 'sans-serif'],
-            display: ['Space Grotesk', 'sans-serif'],
-            mono: ['JetBrains Mono', 'monospace'],
-          },
-          colors: {
-            editorial: {
-              paper: '#FAF9F6',
-              ink: '#14171A',
-              teal: '#0F766E',
-              coral: '#EA580C',
-              darkBg: '#0B0F17',
-              darkCard: '#131A26',
-              darkBorder: '#1F2937',
-            }
-          }
-        }
-      }
-    };
-  </script>
+  <title>Interactive Data Visualization — Semester Review</title>
   <style>
-    /* Subtle grid background inspired by graph paper / Datawrapper canvases */
-    .bg-grid-pattern {
-      background-size: 28px 28px;
-      background-image: 
-        linear-gradient(to right, rgba(15, 118, 110, 0.05) 1px, transparent 1px),
-        linear-gradient(to bottom, rgba(15, 118, 110, 0.05) 1px, transparent 1px);
+    :root {
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --text: #0f172a;
+      --muted: #475569;
+      --border: #e2e8f0;
+      --accent: #2563eb;
+      --accent-hover: #1d4ed8;
+      --badge-bg: #eff6ff;
+      --badge-text: #1d4ed8;
+      --shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
     }
-    .dark .bg-grid-pattern {
-      background-image: 
-        linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-        linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+
+    body.dark {
+      --bg: #0f172a;
+      --surface: #1e293b;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --border: #334155;
+      --accent: #3b82f6;
+      --accent-hover: #60a5fa;
+      --badge-bg: rgba(59, 130, 246, 0.15);
+      --badge-text: #93c5fd;
+      --shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      transition: background-color 0.2s, color 0.2s;
+    }
+
+    /* Passcode Gate Overlay */
+    #passcode-gate {
+      position: fixed;
+      inset: 0;
+      background: #0f172a;
+      color: #f8fafc;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      padding: 1rem;
+    }
+
+    .gate-card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      padding: 2rem;
+      border-radius: 14px;
+      max-width: 360px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 20px 35px rgba(0, 0, 0, 0.45);
+    }
+
+    .gate-card h2 {
+      margin: 0 0 0.5rem;
+      font-size: 1.3rem;
+    }
+
+    .gate-card p {
+      margin: 0 0 1.25rem;
+      font-size: 0.9rem;
+      color: #94a3b8;
+    }
+
+    .gate-card input {
+      width: 100%;
+      padding: 0.7rem 0.85rem;
+      border-radius: 8px;
+      border: 1px solid #334155;
+      background: #0f172a;
+      color: #ffffff;
+      font-size: 0.95rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .gate-card input:focus {
+      outline: 2px solid #3b82f6;
+      border-color: transparent;
+    }
+
+    .gate-card button {
+      width: 100%;
+      padding: 0.7rem;
+      border-radius: 8px;
+      border: none;
+      background: #3b82f6;
+      color: #ffffff;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .gate-card button:hover {
+      background: #2563eb;
+    }
+
+    #passcode-error {
+      color: #f87171;
+      font-size: 0.85rem;
+      margin: 0.75rem 0 0;
+      display: none;
+    }
+
+    /* Main Portal Layout */
+    .container {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 2.5rem 1.25rem 4rem;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin-bottom: 2rem;
+    }
+
+    h1 {
+      margin: 0 0 0.35rem;
+      font-size: 1.85rem;
+      letter-spacing: -0.02em;
+    }
+
+    .subtitle {
+      margin: 0;
+      color: var(--muted);
+      font-size: 1rem;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .btn-secondary {
+      background: var(--surface);
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 0.5rem 0.85rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--accent);
+    }
+
+    .controls {
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+      margin-bottom: 2rem;
+    }
+
+    #search-input {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      font-size: 0.95rem;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+    }
+
+    #search-input:focus {
+      outline: 2px solid var(--accent);
+      border-color: transparent;
+    }
+
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .filter-btn {
+      background: var(--surface);
+      color: var(--muted);
+      border: 1px solid var(--border);
+      padding: 0.4rem 0.85rem;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    .filter-btn.active {
+      background: var(--accent);
+      color: #ffffff;
+      border-color: var(--accent);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+      gap: 1.25rem;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.35rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-shadow: var(--shadow);
+    }
+
+    .badge {
+      display: inline-block;
+      background: var(--badge-bg);
+      color: var(--badge-text);
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.2rem 0.6rem;
+      border-radius: 6px;
+      margin-bottom: 0.65rem;
+    }
+
+    .card h3 {
+      margin: 0 0 0.5rem;
+      font-size: 1.1rem;
+    }
+
+    .card p {
+      margin: 0 0 1.25rem;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
+    .slide-link {
+      display: inline-block;
+      text-align: center;
+      text-decoration: none;
+      background: var(--accent);
+      color: #ffffff;
+      font-weight: 600;
+      font-size: 0.875rem;
+      padding: 0.55rem 0.9rem;
+      border-radius: 8px;
+      transition: background-color 0.15s;
+    }
+
+    .slide-link:hover {
+      background: var(--accent-hover);
+    }
+
+    #empty-state {
+      display: none;
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--muted);
     }
   </style>
 </head>
-<body class="bg-editorial-paper text-editorial-ink dark:bg-editorial-darkBg dark:text-slate-100 transition-colors duration-200 min-h-screen flex flex-col bg-grid-pattern">
+<body>
 
-  <!-- Top Navigation & Progress Strip -->
-  <header class="sticky top-0 z-30 backdrop-blur-md bg-editorial-paper/90 dark:bg-editorial-darkBg/90 border-b border-stone-200 dark:border-slate-800">
-    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-wrap items-center justify-between gap-4">
-      <div class="flex items-center gap-3">
-        <div class="w-8 h-8 rounded-lg bg-teal-700 text-white flex items-center justify-center font-mono font-bold text-sm shadow-sm">
-          DV
-        </div>
-        <div>
-          <span class="font-display font-bold text-base sm:text-lg tracking-tight block leading-none">
-            Interactive Data Visualization
-          </span>
-          <span class="font-mono text-[11px] uppercase tracking-wider text-stone-500 dark:text-slate-400">
-            Semester Study Index • Lectures 01–15
-          </span>
-        </div>
-      </div>
-
-      <!-- Controls: Progress Indicator & Theme Toggle -->
-      <div class="flex items-center gap-3 sm:gap-5">
-        <!-- Study Progress Pill -->
-        <div class="flex items-center gap-2.5 bg-white dark:bg-editorial-darkCard border border-stone-200 dark:border-slate-800 px-3 py-1.5 rounded-xl shadow-xs">
-          <div class="text-right">
-            <div class="font-mono text-[11px] text-stone-500 dark:text-slate-400 leading-none">REVIEWED</div>
-            <div id="progressText" class="font-mono text-xs font-bold text-teal-700 dark:text-teal-400 mt-0.5">0 / 14 (0%)</div>
-          </div>
-          <div class="w-16 sm:w-24 h-2 bg-stone-200 dark:bg-slate-800 rounded-full overflow-hidden">
-            <div id="progressBar" class="h-full bg-teal-700 dark:bg-teal-500 transition-all duration-300" style="width: 0%"></div>
-          </div>
-        </div>
-
-        <!-- Dark Mode Toggle -->
-        <button id="themeToggle" aria-label="Toggle Dark Mode" class="p-2.5 rounded-xl bg-white dark:bg-editorial-darkCard border border-stone-200 dark:border-slate-800 text-stone-700 dark:text-slate-300 hover:border-teal-600 dark:hover:border-teal-500 transition-colors">
-          <!-- Sun Icon (shown in dark mode) -->
-          <svg id="sunIcon" class="w-4 h-4 hidden dark:block" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <circle cx="12" cy="12" r="5"></circle>
-            <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"></path>
-          </svg>
-          <!-- Moon Icon (shown in light mode) -->
-          <svg id="moonIcon" class="w-4 h-4 block dark:hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-          </svg>
-        </button>
-      </div>
-    </div>
-  </header>
-
-  <!-- Main Content -->
-  <main class="flex-grow max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-    
-    <!-- Editorial Hero Header -->
-    <section class="mb-8 sm:mb-10">
-      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-50 dark:bg-orange-950/40 border border-orange-200 dark:border-orange-900/60 text-orange-700 dark:text-orange-400 font-mono text-xs font-medium mb-4">
-        <span class="w-2 h-2 rounded-full bg-orange-600"></span>
-        COURSE SYNTHESIS &amp; SLIDE ARCHIVE
-      </div>
-      <h1 class="font-display text-3xl sm:text-5xl font-bold tracking-tight text-stone-900 dark:text-white max-w-3xl leading-[1.12]">
-        From Visual Encoding to Interactive Data Storytelling
-      </h1>
-      <p class="mt-3 sm:mt-4 text-base sm:text-lg text-stone-600 dark:text-slate-300 max-w-2xl leading-relaxed">
-        A structured directory of all 15 semester lectures, tools, and Pitch slide decks. Filter by module, search concepts, and track your exam review progress.
-      </p>
-    </section>
-
-    <!-- Search & Module Filter Controls -->
-    <section class="bg-white dark:bg-editorial-darkCard border border-stone-200 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xs mb-8">
-      <div class="flex flex-col md:flex-row gap-4 justify-between">
-        <!-- Live Search Input -->
-        <div class="relative flex-grow">
-          <svg class="w-4 h-4 text-stone-400 dark:text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <circle cx="11" cy="11" r="8"></circle>
-            <path d="m21 21-4.3-4.3"></path>
-          </svg>
-          <input
-            type="text"
-            id="searchInput"
-            placeholder="Search lectures, tools (e.g., Datawrapper, Flourish, GeoJSON, Tufte)..."
-            class="w-full pl-10 pr-10 py-2.5 rounded-xl bg-stone-50 dark:bg-slate-900/80 border border-stone-200 dark:border-slate-700 text-sm text-stone-900 dark:text-slate-100 placeholder-stone-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-600 dark:focus:ring-teal-500 transition-all"
-          />
-          <button id="clearSearchBtn" class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-xs font-mono text-stone-400 hover:text-stone-700 dark:hover:text-slate-200 px-1.5 py-0.5 rounded">
-            ESC
-          </button>
-        </div>
-
-        <!-- Reset Progress Button -->
-        <div class="flex items-center justify-between md:justify-end gap-2">
-          <span id="resultCount" class="font-mono text-xs text-stone-500 dark:text-slate-400 px-2">
-            Showing 14 items
-          </span>
-          <button id="resetProgressBtn" class="text-xs font-mono px-3 py-2 rounded-xl border border-stone-200 dark:border-slate-700 text-stone-600 dark:text-slate-300 hover:bg-stone-100 dark:hover:bg-slate-800 transition-colors">
-            Reset Checkmarks
-          </button>
-        </div>
-      </div>
-
-      <!-- Module Filter Pills -->
-      <div id="moduleFilters" class="flex flex-wrap gap-2 mt-4 pt-4 border-t border-stone-100 dark:border-slate-800/80">
-        <button data-module="all" class="filter-pill active px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all bg-teal-700 text-white shadow-xs">
-          All Modules
-        </button>
-        <button data-module="1" class="filter-pill px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all bg-stone-100 dark:bg-slate-800/80 text-stone-700 dark:text-slate-300 hover:bg-stone-200 dark:hover:bg-slate-700">
-          Module 1: Foundations
-        </button>
-        <button data-module="2" class="filter-pill px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all bg-stone-100 dark:bg-slate-800/80 text-stone-700 dark:text-slate-300 hover:bg-stone-200 dark:hover:bg-slate-700">
-          Module 2: Storytelling
-        </button>
-        <button data-module="3" class="filter-pill px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all bg-stone-100 dark:bg-slate-800/80 text-stone-700 dark:text-slate-300 hover:bg-stone-200 dark:hover:bg-slate-700">
-          Module 3: Tools &amp; Prep
-        </button>
-        <button data-module="4" class="filter-pill px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all bg-stone-100 dark:bg-slate-800/80 text-stone-700 dark:text-slate-300 hover:bg-stone-200 dark:hover:bg-slate-700">
-          Module 4: Geospatial
-        </button>
-      </div>
-    </section>
-
-    <!-- Lecture Cards Container -->
-    <div id="lecturesContainer" class="space-y-10">
-      <!-- Dynamically populated by JavaScript -->
-    </div>
-
-    <!-- Empty Search State -->
-    <div id="emptyState" class="hidden text-center py-16 px-4 bg-white dark:bg-editorial-darkCard border border-stone-200 dark:border-slate-800 rounded-2xl">
-      <p class="font-display text-xl font-bold text-stone-800 dark:text-slate-200">No matching lectures found</p>
-      <p class="text-sm text-stone-500 dark:text-slate-400 mt-1">Try searching for another keyword or clearing your active module filter.</p>
-      <button id="resetFiltersBtn" class="mt-4 px-4 py-2 rounded-xl bg-teal-700 text-white text-sm font-medium hover:bg-teal-800 transition-colors">
-        Show All Lectures
-      </button>
-    </div>
-
-  </main>
-
-  <!-- Toast Notification Banner (Replaces alert/confirm) -->
-  <div id="toastBanner" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
-    <div class="bg-stone-900 dark:bg-slate-800 text-white px-4 py-3 rounded-xl shadow-lg border border-stone-700 flex items-center gap-3 text-sm">
-      <span id="toastMessage">Progress updated</span>
+  <!-- Passcode Gate -->
+  <div id="passcode-gate">
+    <div class="gate-card">
+      <h2>Class Review Access</h2>
+      <p>Enter the semester passcode to view the lecture slides and notes.</p>
+      <input id="passcode-input" type="password" placeholder="Enter passcode" autocomplete="off" />
+      <button type="button" onclick="checkPasscode()">Unlock Slides</button>
+      <p id="passcode-error">Incorrect passcode. Please try again.</p>
     </div>
   </div>
 
-  <!-- Footer -->
-  <footer class="border-t border-stone-200 dark:border-slate-800 py-6 px-4 sm:px-6 lg:px-8 mt-12 bg-white/60 dark:bg-editorial-darkCard/60">
-    <div class="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-stone-500 dark:text-slate-400 font-mono">
-      <span>Interactive Data Visualization • GitHub Pages Study Archive</span>
-      <span>Progress is saved locally in your browser</span>
+  <!-- Main Study Portal -->
+  <div class="container">
+    <header>
+      <div>
+        <h1>Interactive Data Visualization</h1>
+        <p class="subtitle">Semester Review — Lectures 1 through 15</p>
+      </div>
+      <div class="header-actions">
+        <button class="btn-secondary" type="button" onclick="toggleTheme()">Toggle Theme</button>
+        <button class="btn-secondary" type="button" onclick="lockSite()">Lock</button>
+      </div>
+    </header>
+
+    <div class="controls">
+      <input id="search-input" type="text" placeholder="Search lectures, tools (e.g., Datawrapper, Flourish, Google Sheets), or concepts..." oninput="renderLectures()" />
+      <div class="filters">
+        <button class="filter-btn active" data-module="all" onclick="setModule('all', this)">All Modules (14)</button>
+        <button class="filter-btn" data-module="1" onclick="setModule('1', this)">Module 1: Foundations</button>
+        <button class="filter-btn" data-module="2" onclick="setModule('2', this)">Module 2: Storytelling</button>
+        <button class="filter-btn" data-module="3" onclick="setModule('3', this)">Module 3: Tools &amp; Charts</button>
+        <button class="filter-btn" data-module="4" onclick="setModule('4', this)">Module 4: Geospatial &amp; Final</button>
+      </div>
     </div>
-  </footer>
 
-  <!-- Application Data & Logic -->
+    <div id="lecture-grid" class="grid"></div>
+    <div id="empty-state">No lectures matched your search. Try another keyword or reset the module filter.</div>
+  </div>
+
   <script>
-    /**
-     * Structured dataset for all 15 lectures across 4 modules.
-     */
-    const MODULES = [
-      {
-        id: "1",
-        number: "MODULE 01",
-        title: "Foundations & Visual Encoding",
-        subtitle: "Historical milestones, perceptual accuracy rankings, and honest visual scaling"
-      },
-      {
-        id: "2",
-        number: "MODULE 02",
-        title: "Design Philosophy & Data Storytelling",
-        subtitle: "Editorial design tradeoffs, narrative structures, and critical data literacy"
-      },
-      {
-        id: "3",
-        number: "MODULE 03",
-        title: "Data Preparation & Charting Tools",
-        subtitle: "Spreadsheet wrangling, metadata documentation, Datawrapper, and Flourish"
-      },
-      {
-        id: "4",
-        number: "MODULE 04",
-        title: "Geospatial Mapping & Final Synthesis",
-        subtitle: "Map projections, rate normalization, GeoJSON workflows, and capstone storytelling"
-      }
-    ];
+    // ==========================================
+    // 1. SET YOUR PASSCODE HERE
+    // ==========================================
+    const PASSCODE = "dataviz2026";
 
-    const LECTURES = [
-      {
-        id: "lec-01",
-        module: "1",
-        label: "Lecture 1",
-        title: "History of Data Visualization",
-        url: "https://pitch.com/v/li_class-1---interactive-visualization---history-of-data-visualization-hxsjtt",
-        summary: "Evolution of visual storytelling, historical milestones (Florence Nightingale, Charles Minard, John Snow), and transforming raw numbers into human insight.",
-        tags: ["History", "Minard", "Florence Nightingale", "John Snow", "Visual Thinking"]
-      },
-      {
-        id: "lec-02",
-        module: "1",
-        label: "Lecture 2",
-        title: "Methods of Encoding",
-        url: "https://app.pitch.com/app/presentation/5f587211-523c-4934-811b-166d7aca192d/57d46f42-96a0-4f13-9793-5ff714837403",
-        summary: "Mapping data variables to visual channels (position, length, area, angle, color hue/saturation) and perceptual accuracy across chart forms.",
-        tags: ["Visual Channels", "Cleveland & McGill", "Perception", "Color Hue", "Position vs Area"]
-      },
-      {
-        id: "lec-03-04",
-        module: "1",
-        label: "Lectures 3 & 4",
-        title: "Proper Scaling, Sizing & Constructive Critiques",
-        url: "https://pitch.com/v/sept-2--interactive-visualization---constructive-critiques-j3cgsp/699affdf-ff98-41dc-829b-312b032fc807",
-        summary: "Axis manipulation (zero-baselines vs. truncated axes), proportional area scaling, avoiding visual distortion, and actionable design critique frameworks.",
-        tags: ["Zero Baseline", "Area Scaling", "Chart Critique", "Visual Integrity", "Aspect Ratio"]
-      },
-      {
-        id: "lec-05",
-        module: "2",
-        label: "Lecture 5",
-        title: "Design Decisions & Writing Style",
-        url: "https://pitch.com/v/sept9_lecture-5_-interactive-visualization---artistry-v-efficiency-writing-style-mk3xi7",
-        summary: "Balancing artistry vs. functional efficiency, reducing chartjunk, typography, color hierarchy, and writing clear headlines and annotations.",
-        tags: ["Tufte", "Data-Ink Ratio", "Typography", "Annotations", "Active Headlines"]
-      },
-      {
-        id: "lec-06",
-        module: "2",
-        label: "Lecture 6",
-        title: "Types of Data Stories",
-        url: "https://pitch.com/v/sept-16---interactive-visualization---types-of-data-stories-s8vm39/4c81cb75-a72d-4bed-b1ab-d581aed070e7",
-        summary: "Narrative structures in data journalism—trend over time, comparison, outlier/anomaly detection, part-to-whole, and intersecting relationships.",
-        tags: ["Story Archetypes", "Change Over Time", "Outliers", "Part-to-Whole", "Data Journalism"]
-      },
-      {
-        id: "lec-07",
-        module: "2",
-        label: "Lecture 7",
-        title: "Data Literacy & Personal Data Stories",
-        url: "https://pitch.com/v/sept16_lecture7-interactive-visualization---personal-data-story-peer-feedback-knavge",
-        summary: "Evaluating data credibility, understanding context and bias, translating personal datasets into relatable narratives, and peer feedback workflows.",
-        tags: ["Data Literacy", "Sampling Bias", "Personal Data", "Peer Feedback", "Context"]
-      },
-      {
-        id: "lec-08",
-        module: "3",
-        label: "Lecture 8",
-        title: "Data Story Reading & Intro to Google Sheets",
-        url: "https://pitch.com/v/sept-23_lecture8_interactive-visualization---intro-to-google-sheets-i5ju9e/c8ea3514-6928-4279-a2c8-db89b62e20b0",
-        summary: "Deconstructing published data stories alongside foundational spreadsheet skills (sorting, filtering, formatting, and basic formulas).",
-        tags: ["Google Sheets", "Sorting & Filtering", "Formulas", "Story Deconstruction"]
-      },
-      {
-        id: "lec-09",
-        module: "3",
-        label: "Lecture 9",
-        title: "Google Sheets Practice (Part 2)",
-        url: "https://pitch.com/v/sept-30_lecture9_interactive-visualization---google-sheets-pt-2-x8dfws",
-        summary: "Intermediate data cleaning and aggregation—pivot tables, VLOOKUP/XLOOKUP, conditional logic, and restructuring raw data for charting.",
-        tags: ["Pivot Tables", "VLOOKUP / XLOOKUP", "Data Cleaning", "Aggregation", "Google Sheets"]
-      },
-      {
-        id: "lec-10",
-        module: "3",
-        label: "Lecture 10",
-        title: "Chart Selection & Intro to Datawrapper",
-        url: "https://pitch.com/v/sept30_lecture_10interactive-visualization---intro-to-datawrapper-br8eg4/6ec8525c-ab71-475c-98ef-f3fb81521243",
-        summary: "Matching data relationships to the right chart type (bar, line, scatter, table) and building clean, responsive charts in Datawrapper.",
-        tags: ["Datawrapper", "Chart Selection", "Responsive Charts", "Bar vs Line", "Direct Labels"]
-      },
-      {
-        id: "lec-11",
-        module: "3",
-        label: "Lecture 11",
-        title: "Datawrapper Practice, Metadata & Data Dictionaries",
-        url: "https://pitch.com/v/oct-7_lecture-11---interactive-visualization---datawrapper-data-dictionaries-5zzzep/c468bd9b-478f-41f6-98af-ca5470c84cfa",
-        summary: "Documenting datasets with data dictionaries (variable definitions, units, sources), citing metadata properly, and customizing interactive tooltips.",
-        tags: ["Data Dictionaries", "Metadata", "Provenance", "Tooltips", "Datawrapper"]
-      },
-      {
-        id: "lec-12",
-        module: "3",
-        label: "Lecture 12",
-        title: "Common Chart Mistakes & Intro to Flourish",
-        url: "https://pitch.com/v/oct14_-lecture-12---interactive-visualization---problems-to-avoid-6u6ajd",
-        summary: "Troubleshooting misleading visuals (dual axes, rainbow color maps, overcrowded pie charts) and creating animated/interactive visuals in Flourish.",
-        tags: ["Flourish", "Chart Pitfalls", "Dual Axes", "Scrollytelling", "Color Scales"]
-      },
-      {
-        id: "lec-13",
-        module: "4",
-        label: "Lecture 13",
-        title: "Geospatial Data (Part 1)",
-        url: "https://pitch.com/v/oct-21---lecture-13---interactive-visualization-xerh5k/de3a05ba-4270-442e-8556-89f805a868de",
-        summary: "Fundamentals of geographic visualization, map projections, coordinate systems, and choosing between choropleth and symbol/point maps.",
-        tags: ["Geospatial", "Map Projections", "Choropleth Maps", "Symbol Maps", "Coordinates"]
-      },
-      {
-        id: "lec-14",
-        module: "4",
-        label: "Lecture 14",
-        title: "Geospatial Data (Part 2)",
-        url: "https://pitch.com/v/oct-28---lecture-14---geospatial-mapping-practice-2-d6v94q/8d3543cb-6972-49ee-b172-8869e2a868de",
-        summary: "Hands-on mapping workflows, normalizing geographic data (rates vs. raw counts), working with GeoJSON/shapefiles, and color binning strategies.",
-        tags: ["GeoJSON", "Shapefiles", "Rate Normalization", "Color Binning", "Cartography"]
-      },
-      {
-        id: "lec-15",
-        module: "4",
-        label: "Lecture 15",
-        title: "Data Story Visualization Development",
-        url: "https://pitch.com/v/lecture-15---data-story-continued-nov-4-2v75jt/44deabf5-7f87-48df-9a46-e57bb07c8160",
-        summary: "Synthesizing research, data cleaning, visual hierarchy, and interactive embeds into a cohesive end-to-end final data story.",
-        tags: ["Capstone Project", "Story Synthesis", "Interactive Embeds", "End-to-End Workflow"]
-      }
-    ];
-
-    // State management
-    const STORAGE_KEY_REVIEWED = 'idv_semester_reviewed_v1';
-    const STORAGE_KEY_THEME = 'idv_semester_theme_v1';
-    let reviewedIds = new Set();
-    let activeModule = 'all';
-    let searchQuery = '';
-    let toastTimeout = null;
-
-    // Safely load persisted state
-    function loadState() {
-      try {
-        const savedReviewed = JSON.parse(localStorage.getItem(STORAGE_KEY_REVIEWED) || '[]');
-        reviewedIds = new Set(Array.isArray(savedReviewed) ? savedReviewed : []);
-      } catch (e) {
-        reviewedIds = new Set();
-      }
-
-      try {
-        const savedTheme = localStorage.getItem(STORAGE_KEY_THEME);
-        if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-          document.documentElement.classList.add('dark');
-        }
-      } catch (e) {
-        // Fallback to light mode
-      }
+    if (sessionStorage.getItem("unlocked") === "true") {
+      document.getElementById("passcode-gate").style.display = "none";
     }
 
-    // Save reviewed checklist to localStorage
-    function saveReviewed() {
-      try {
-        localStorage.setItem(STORAGE_KEY_REVIEWED, JSON.stringify([...reviewedIds]));
-      } catch (e) {
-        // Ignore storage quota errors in restricted frames
-      }
-    }
-
-    // Show non-blocking notification toast
-    function showToast(message) {
-      const banner = document.getElementById('toastBanner');
-      const msgEl = document.getElementById('toastMessage');
-      msgEl.textContent = message;
-      banner.classList.remove('translate-y-20', 'opacity-0');
-      clearTimeout(toastTimeout);
-      toastTimeout = setTimeout(() => {
-        banner.classList.add('translate-y-20', 'opacity-0');
-      }, 2200);
-    }
-
-    // Update top progress bar
-    function updateProgressUI() {
-      const total = LECTURES.length;
-      const count = reviewedIds.size;
-      const pct = Math.round((count / total) * 100);
-      document.getElementById('progressText').textContent = `${count} / ${total} (${pct}%)`;
-      document.getElementById('progressBar').style.width = `${pct}%`;
-    }
-
-    // Toggle reviewed state for a lecture
-    function toggleReviewed(lectureId) {
-      if (reviewedIds.has(lectureId)) {
-        reviewedIds.delete(lectureId);
-        showToast('Marked as unreviewed');
+    function checkPasscode() {
+      const input = document.getElementById("passcode-input").value.trim();
+      if (input === PASSCODE) {
+        sessionStorage.setItem("unlocked", "true");
+        document.getElementById("passcode-gate").style.display = "none";
+        document.getElementById("passcode-error").style.display = "none";
       } else {
-        reviewedIds.add(lectureId);
-        showToast('Marked as reviewed ✓');
+        document.getElementById("passcode-error").style.display = "block";
       }
-      saveReviewed();
-      updateProgressUI();
-      renderLectures();
     }
 
-    // Render filtered lectures grouped by module
-    function renderLectures() {
-      const container = document.getElementById('lecturesContainer');
-      const emptyState = document.getElementById('emptyState');
-      const resultCount = document.getElementById('resultCount');
-      const q = searchQuery.trim().toLowerCase();
-
-      const filteredLectures = LECTURES.filter((lec) => {
-        const matchesModule = activeModule === 'all' || lec.module === activeModule;
-        if (!matchesModule) return false;
-        if (!q) return true;
-
-        const searchable = [
-          lec.label,
-          lec.title,
-          lec.summary,
-          ...lec.tags
-        ].join(' ').toLowerCase();
-
-        return searchable.includes(q);
-      });
-
-      resultCount.textContent = `Showing ${filteredLectures.length} of ${LECTURES.length} entries`;
-
-      if (filteredLectures.length === 0) {
-        container.innerHTML = '';
-        emptyState.classList.remove('hidden');
-        return;
-      }
-
-      emptyState.classList.add('hidden');
-      let html = '';
-
-      MODULES.forEach((mod) => {
-        const modLectures = filteredLectures.filter((l) => l.module === mod.id);
-        if (modLectures.length === 0) return;
-
-        html += `
-          <section class="space-y-4">
-            <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-2 pb-3 border-b border-stone-200 dark:border-slate-800">
-              <div>
-                <span class="font-mono text-xs font-bold tracking-wider text-teal-700 dark:text-teal-400">
-                  ${mod.number}
-                </span>
-                <h2 class="font-display text-2xl font-bold text-stone-900 dark:text-white mt-0.5">
-                  ${mod.title}
-                </h2>
-              </div>
-              <p class="text-xs sm:text-sm text-stone-500 dark:text-slate-400 max-w-md">
-                ${mod.subtitle}
-              </p>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-              ${modLectures.map((lec) => renderCard(lec)).join('')}
-            </div>
-          </section>
-        `;
-      });
-
-      container.innerHTML = html;
+    function lockSite() {
+      sessionStorage.removeItem("unlocked");
+      document.getElementById("passcode-input").value = "";
+      document.getElementById("passcode-gate").style.display = "flex";
     }
 
-    // Render individual lecture card HTML
-    function renderCard(lec) {
-      const isReviewed = reviewedIds.has(lec.id);
-      const cardBorder = isReviewed
-        ? 'border-teal-600/60 dark:border-teal-500/50 bg-teal-50/30 dark:bg-teal-950/10'
-        : 'border-stone-200 dark:border-slate-800 bg-white dark:bg-editorial-darkCard';
-
-      return `
-        <article class="rounded-2xl border ${cardBorder} p-5 sm:p-6 shadow-xs hover:shadow-md transition-all flex flex-col justify-between">
-          <div>
-            <!-- Top Row: Lecture Badge & Reviewed Checkbox -->
-            <div class="flex items-center justify-between gap-3 mb-3">
-              <span class="font-mono text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded-md bg-stone-100 dark:bg-slate-800 text-stone-700 dark:text-slate-300">
-                ${lec.label}
-              </span>
-
-              <button
-                type="button"
-                onclick="toggleReviewed('${lec.id}')"
-                aria-pressed="${isReviewed}"
-                class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-mono font-medium border transition-colors ${
-                  isReviewed
-                    ? 'bg-teal-700 border-teal-700 text-white'
-                    : 'bg-white dark:bg-slate-900 border-stone-200 dark:border-slate-700 text-stone-600 dark:text-slate-300 hover:border-teal-600'
-                }"
-              >
-                <span class="w-3.5 h-3.5 rounded-xs flex items-center justify-center border ${
-                  isReviewed ? 'border-white bg-white text-teal-700' : 'border-stone-400 dark:border-slate-500'
-                }">
-                  ${isReviewed ? '✓' : ''}
-                </span>
-                ${isReviewed ? 'Reviewed' : 'Mark Reviewed'}
-              </button>
-            </div>
-
-            <!-- Title & Summary -->
-            <h3 class="font-display text-xl font-bold text-stone-900 dark:text-white leading-snug mb-2">
-              ${lec.title}
-            </h3>
-            <p class="text-sm text-stone-600 dark:text-slate-300 leading-relaxed mb-4">
-              ${lec.summary}
-            </p>
-          </div>
-
-          <div>
-            <!-- Topic Pills -->
-            <div class="flex flex-wrap gap-1.5 mb-5">
-              ${lec.tags.map((tag) => `
-                <span class="font-mono text-[11px] px-2 py-0.5 rounded-md bg-stone-100 dark:bg-slate-800/90 text-stone-600 dark:text-slate-400">
-                  #${tag}
-                </span>
-              `).join('')}
-            </div>
-
-            <!-- Action Button -->
-            <a
-              href="${lec.url}"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-stone-900 hover:bg-teal-700 dark:bg-slate-800 dark:hover:bg-teal-600 text-white text-sm font-medium transition-colors"
-            >
-              <span>Open Pitch Slides</span>
-              <span aria-hidden="true">↗</span>
-            </a>
-          </div>
-        </article>
-      `;
-    }
-
-    // Initialize event listeners
-    document.addEventListener('DOMContentLoaded', () => {
-      loadState();
-      updateProgressUI();
-      renderLectures();
-
-      const searchInput = document.getElementById('searchInput');
-      const clearSearchBtn = document.getElementById('clearSearchBtn');
-
-      searchInput.addEventListener('input', (e) => {
-        searchQuery = e.target.value;
-        clearSearchBtn.classList.toggle('hidden', !searchQuery);
-        renderLectures();
-      });
-
-      clearSearchBtn.addEventListener('click', () => {
-        searchQuery = '';
-        searchInput.value = '';
-        clearSearchBtn.classList.add('hidden');
-        renderLectures();
-      });
-
-      // Module filter buttons
-      document.querySelectorAll('.filter-pill').forEach((btn) => {
-        btn.addEventListener('click', () => {
-          activeModule = btn.dataset.module;
-          document.querySelectorAll('.filter-pill').forEach((b) => {
-            b.classList.remove('bg-teal-700', 'text-white', 'shadow-xs');
-            b.classList.add('bg-stone-100', 'dark:bg-slate-800/80', 'text-stone-700', 'dark:text-slate-300');
-          });
-          btn.classList.remove('bg-stone-100', 'dark:bg-slate-800/80', 'text-stone-700', 'dark:text-slate-300');
-          btn.classList.add('bg-teal-700', 'text-white', 'shadow-xs');
-          renderLectures();
-        });
-      });
-
-      // Reset filters from empty state
-      document.getElementById('resetFiltersBtn').addEventListener('click', () => {
-        searchQuery = '';
-        searchInput.value = '';
-        clearSearchBtn.classList.add('hidden');
-        activeModule = 'all';
-        document.querySelector('.filter-pill[data-module="all"]').click();
-      });
-
-      // Reset progress checkmarks
-      document.getElementById('resetProgressBtn').addEventListener('click', () => {
-        if (reviewedIds.size === 0) {
-          showToast('No checkmarks to reset');
-          return;
-        }
-        reviewedIds.clear();
-        saveReviewed();
-        updateProgressUI();
-        renderLectures();
-        showToast('All review checkmarks cleared');
-      });
-
-      // Dark / Light mode toggle
-      document.getElementById('themeToggle').addEventListener('click', () => {
-        const isDark = document.documentElement.classList.toggle('dark');
-        try {
-          localStorage.setItem(STORAGE_KEY_THEME, isDark ? 'dark' : 'light');
-        } catch (e) {}
-      });
+    document.getElementById("passcode-input").addEventListener("keypress", function (e) {
+      if (e.key === "Enter") checkPasscode();
     });
+
+    // ==========================================
+    // 2. LECTURE DATA (ALL 15 LECTURES)
+    // ==========================================
+    const lectures = [
+      {
+        num: "Lecture 1",
+        module: "1",
+        moduleName: "Module 1: Foundations",
+        title: "History of Data Visualization",
+        desc: "Evolution of visual storytelling, historical milestones (Nightingale, Minard, John Snow), and turning raw data into human insight.",
+        url: "https://pitch.com/v/li_class-1---interactive-visualization---history-of-data-visualization-hxsjtt"
+      },
+      {
+        num: "Lecture 2",
+        module: "1",
+        moduleName: "Module 1: Foundations",
+        title: "Methods of Encoding",
+        desc: "Mapping data variables to visual channels (position, length, area, angle, color) and perceptual accuracy across chart forms.",
+        url: "https://app.pitch.com/app/presentation/5f587211-523c-4934-811b-166d7aca192d/57d46f42-96a0-4f13-9793-5ff714837403"
+      },
+      {
+        num: "Lectures 3 & 4",
+        module: "1",
+        moduleName: "Module 1: Foundations",
+        title: "Proper Scaling, Sizing & Constructive Critiques",
+        desc: "Zero-baselines vs. truncated axes, proportional area scaling, avoiding visual distortion, and giving actionable design critiques.",
+        url: "https://pitch.com/v/sept-2--interactive-visualization---constructive-critiques-j3cgsp/699affdf-ff98-41dc-829b-312b032fc807"
+      },
+      {
+        num: "Lecture 5",
+        module: "2",
+        moduleName: "Module 2: Storytelling",
+        title: "Design Decisions & Writing Style",
+        desc: "Balancing artistry versus efficiency, reducing chartjunk, typography, color hierarchy, and writing clear headlines and annotations.",
+        url: "https://pitch.com/v/sept9_lecture-5_-interactive-visualization---artistry-v-efficiency-writing-style-mk3xi7"
+      },
+      {
+        num: "Lecture 6",
+        module: "2",
+        moduleName: "Module 2: Storytelling",
+        title: "Types of Data Stories",
+        desc: "Narrative structures in data journalism: trend over time, comparison, outlier/anomaly, part-to-whole, and intersecting relationships.",
+        url: "https://pitch.com/v/sept-16---interactive-visualization---types-of-data-stories-s8vm39/4c81cb75-a72d-4bed-b1ab-d581aed070e7"
+      },
+      {
+        num: "Lecture 7",
+        module: "2",
+        moduleName: "Module 2: Storytelling",
+        title: "Data Literacy & Personal Data Stories",
+        desc: "Evaluating data credibility, understanding context and bias, translating personal datasets into narratives, and peer feedback workflows.",
+        url: "https://pitch.com/v/sept16_lecture7-interactive-visualization---personal-data-story-peer-feedback-knavge"
+      },
+      {
+        num: "Lecture 8",
+        module: "3",
+        moduleName: "Module 3: Tools & Charts",
+        title: "Data Story Reading & Intro to Google Sheets",
+        desc: "Deconstructing published data stories alongside foundational spreadsheet skills: sorting, filtering, formatting, and basic formulas.",
+        url: "https://pitch.com/v/sept-23_lecture8_interactive-visualization---intro-to-google-sheets-i5ju9e/c8ea3514-6928-4279-a2c8-db89b62e20b0"
+      },
+      {
+        num: "Lecture 9",
+        module: "3",
+        moduleName: "Module 3: Tools & Charts",
+        title: "Google Sheets Practice (Part 2)",
+        desc: "Intermediate data cleaning and aggregation: pivot tables, VLOOKUP/XLOOKUP, conditional logic, and restructuring data for charting.",
+        url: "https://pitch.com/v/sept-30_lecture9_interactive-visualization---google-sheets-pt-2-x8dfws"
+      },
+      {
+        num: "Lecture 10",
+        module: "3",
+        moduleName: "Module 3: Tools & Charts",
+        title: "Chart Selection & Intro to Datawrapper",
+        desc: "Matching data relationships to the right chart type (bar, line, scatter, table) and building clean, responsive charts in Datawrapper.",
+        url: "https://pitch.com/v/sept30_lecture_10interactive-visualization---intro-to-datawrapper-br8eg4/6ec8525c-ab71-475c-98ef-f3fb81521243"
+      },
+      {
+        num: "Lecture 11",
+        module: "3",
+        moduleName: "Module 3: Tools & Charts",
+        title: "Datawrapper Practice, Metadata & Data Dictionaries",
+        desc: "Documenting datasets with data dictionaries (variables, units, sources), citing metadata properly, and customizing interactive tooltips.",
+        url: "https://pitch.com/v/oct-7_lecture-11---interactive-visualization---datawrapper-data-dictionaries-5zzzep/c468bd9b-478f-41f6-98af-ca5470c84cfa"
+      },
+      {
+        num: "Lecture 12",
+        module: "3",
+        moduleName: "Module 3: Tools & Charts",
+        title: "Common Chart Mistakes & Intro to Flourish",
+        desc: "Troubleshooting misleading visuals (dual axes, rainbow color maps, overcrowded pies) and creating interactive visuals in Flourish.",
+        url: "https://pitch.com/v/oct14_-lecture-12---interactive-visualization---problems-to-avoid-6u6ajd"
+      },
+      {
+        num: "Lecture 13",
+        module: "4",
+        moduleName: "Module 4: Geospatial & Final",
+        title: "Geospatial Data (Part 1)",
+        desc: "Fundamentals of geographic visualization, map projections, coordinate systems, and choosing between choropleth and point maps.",
+        url: "https://pitch.com/v/oct-21---lecture-13---interactive-visualization-xerh5k/de3a05ba-4270-442e-8556-89f805a868de"
+      },
+      {
+        num: "Lecture 14",
+        module: "4",
+        moduleName: "Module 4: Geospatial & Final",
+        title: "Geospatial Data (Part 2)",
+        desc: "Hands-on mapping workflows, normalizing geographic data (rates vs. raw counts), GeoJSON/shapefiles, and color binning strategies.",
+        url: "https://pitch.com/v/oct-28---lecture-14---geospatial-mapping-practice-2-d6v94q/8d3543cb-6972-49ee-b172-8869e2a868de"
+      },
+      {
+        num: "Lecture 15",
+        module: "4",
+        moduleName: "Module 4: Geospatial & Final",
+        title: "Data Story Visualization Development",
+        desc: "Synthesizing research, data cleaning, visual hierarchy, and interactive embeds into a cohesive end-to-end final data story.",
+        url: "https://pitch.com/v/lecture-15---data-story-continued-nov-4-2v75jt/44deabf5-7f87-48df-9a46-e57bb07c8160"
+      }
+    ];
+
+    // ==========================================
+    // 3. FILTERING, SEARCH & THEME LOGIC
+    // ==========================================
+    let currentModule = "all";
+
+    function setModule(mod, btn) {
+      currentModule = mod;
+      document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      renderLectures();
+    }
+
+    function renderLectures() {
+      const query = document.getElementById("search-input").value.toLowerCase().trim();
+      const grid = document.getElementById("lecture-grid");
+      const empty = document.getElementById("empty-state");
+
+      const filtered = lectures.filter(item => {
+        const matchesModule = currentModule === "all" || item.module === currentModule;
+        const matchesSearch =
+          item.num.toLowerCase().includes(query) ||
+          item.title.toLowerCase().includes(query) ||
+          item.desc.toLowerCase().includes(query) ||
+          item.moduleName.toLowerCase().includes(query);
+        return matchesModule && matchesSearch;
+      });
+
+      grid.innerHTML = filtered.map(item => `
+        <article class="card">
+          <div>
+            <span class="badge">${item.num} &bull; ${item.moduleName.split(": ")[1]}</span>
+            <h3>${item.title}</h3>
+            <p>${item.desc}</p>
+          </div>
+          <a class="slide-link" href="${item.url}" target="_blank" rel="noopener noreferrer">Open Pitch Slides &rarr;</a>
+        </article>
+      `).join("");
+
+      empty.style.display = filtered.length === 0 ? "block" : "none";
+    }
+
+    function toggleTheme() {
+      document.body.classList.toggle("dark");
+    }
+
+    renderLectures();
   </script>
 </body>
 </html>
